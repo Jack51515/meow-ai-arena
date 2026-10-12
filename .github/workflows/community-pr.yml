@@ -1,0 +1,88 @@
+# 社区投稿的 PR 评测。
+#
+# 投稿是任意 C++ 代码，这个工作流会编译并运行它，所以按“代码不可信”来写：
+#   - 用 pull_request 触发，不用 pull_request_target。fork 来的 PR 在这里拿到的令牌只读，也拿不到任何 secrets。
+#   - permissions 只给 contents: read；检出时 persist-credentials: false，令牌不留在 .git/config 里。
+#   - 不使用任何 secrets，也不在 PR 下评论（fork 来的 PR 没有可写的令牌）。结果写在 job summary 里，并作为 artifact 上传。
+#   - 评测脚本、官方 bot、基线、负载都取自目标分支（base/），PR 里只取投稿那一个文件夹（pr/）。
+#     PR 就算改了 community/check.py 或官方代码，也不会影响这次评测的口径。
+#   - 注意：pull_request 事件用的是 PR 自己带的这份工作流文件，PR 可以把它改掉。
+#     所以这里的绿勾不能代替人工审查，合并前要看 Files changed 里有没有 .github/ 的改动。
+name: 社区投稿评测
+
+on:
+  pull_request:
+    paths:
+      - 'community/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: community-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: 检查并评测投稿
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      # 默认检出的是 refs/pull/<编号>/merge：把 PR 合进目标分支后的结果。它的第一个父提交就是目标分支。
+      # fetch-depth: 2 正好够取到这个父提交。
+      - name: 检出 PR 的合并结果
+        uses: actions/checkout@v4
+        with:
+          path: pr
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: 另外检出目标分支
+        run: git -C pr worktree add --detach "$GITHUB_WORKSPACE/base" 'HEAD^1'
+
+      # 只允许新增或修改 community/<集>/<一个目录>/ 下的文件，而且目录名里的用户名要和开 PR 的账号一致。
+      # 维护者（仓库所有者、协作者）的 PR 不受这条限制：改动不是单独一份投稿时，跳过评测。
+      # github 上下文里的值一律经环境变量传给脚本，不直接拼进命令行。
+      - name: 检查改动范围
+        id: scope
+        env:
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_ASSOCIATION: ${{ github.event.pull_request.author_association }}
+        run: |
+          if [ ! -f base/community/ci_tools.py ]; then
+            echo "目标分支上还没有投稿通道的脚本，跳过评测。" >> "$GITHUB_STEP_SUMMARY"
+            echo "kind=other" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          python3 base/community/ci_tools.py scope --repo pr --base 'HEAD^1' --head HEAD
+
+      # bot 类三集调用那一集的 challenge.py（几百局）；仓储调度跑快速档（5 组公开负载 + 3 组隐藏负载）。
+      - name: 评测
+        if: steps.scope.outputs.kind == 'submission'
+        env:
+          ENTRY: ${{ steps.scope.outputs.entry }}
+        run: |
+          g++ --version | head -n 1
+          python3 --version
+          python3 base/community/check.py "pr/$ENTRY" --out "$GITHUB_WORKSPACE/out" --timeout 75
+
+      - name: 把摘要写进 job summary
+        if: always() && steps.scope.outputs.kind == 'submission'
+        run: |
+          if [ -f out/summary.md ]; then
+            cat out/summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "评测没有产出摘要，请看上一步的日志。" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: 上传结果
+        if: always() && steps.scope.outputs.kind == 'submission'
+        uses: actions/upload-artifact@v4
+        with:
+          name: community-result
+          path: |
+            out/result.json
+            out/summary.md
+            out/official-report.md
+          if-no-files-found: warn
+          retention-days: 30

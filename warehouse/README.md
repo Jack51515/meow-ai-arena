@@ -73,6 +73,8 @@ python tools/bench.py --baseline     # 编译 src/，跑 5 组公开负载，和
 
 先读 `workspace/TASK.md`，然后改 `src/`。这就是第 1 轮主程拿到的全部东西。
 
+改完想留个名次，可以把 `src/` 投到社区榜，见 [`community/README.md`](../community/README.md)。
+
 Windows 如果只把 w64devkit 放进仓库的 `tools/`、没有加入 PATH，请先在仓库根目录的 PowerShell 中运行 `$env:CXX = (Resolve-Path .\tools\w64devkit\bin\g++.exe).Path`，再进入 `warehouse/workspace/` 运行上述命令。复制工作区到别处后，同一终端里的设置仍有效。
 
 **拿某个模型的代码来跑**：先把 `workspace/` 复制到别处，再把 `submissions/round1/<模型>/` 里的文件放进副本的 `src/`，运行 `python tools/bench.py`。要跑第 3 轮的终版，按下面的办法拼出接手包：

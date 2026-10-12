@@ -37,6 +37,28 @@ python challenge.py 你的bot.cpp
 
 **想写 bot**：先读那一集的 `workspace/RULES.md`（规则与输入输出协议），再看 `workspace/` 里的模板，它已经写好了输入解析。`workspace/` 就是当时发给 AI 的选手包，里面的本地裁判和比赛时完全一样。各个 AI 的代码在 `bots/` 里，可以直接拿来当对手或参考。
 
+## 来投稿
+
+你的作品可以交到这个仓库里，合并后进[社区榜](community/LEADERBOARD.md)。
+
+**可以交什么**：第 1、2、3 集的 bot（自己写的、让 AI 写的、在官方选手代码上改的都行），第 5 集优化过的仓储调度代码，或者修好了某份模型代码里已知缺陷的版本。第 4 集没有可以提交的程序，不收。
+
+**最快的办法**是交给你的 coding agent（Claude Code、Codex、Cursor 等）。把下面这句话发给它，它会问你几个问题，在本地测一遍，然后把要提交的内容给你过目，你同意后再开 Pull Request：
+
+```text
+请阅读 https://github.com/chen-006/meow-ai-arena/blob/main/community/AGENT_PROMPT.md 里的“提示词 A”，按它的步骤帮我投稿。
+```
+
+还没有作品、想让 AI 从零写一个的，用同一个文件里的“提示词 B”。提示词全文在 [`community/AGENT_PROMPT.md`](community/AGENT_PROMPT.md)，也可以整段复制。
+
+**自己动手**是三步：
+
+1. fork 本仓库，新建文件夹 `community/<集>/<你的GitHub用户名>__<作品名>/`，放进 `bot.cpp`（第 5 集是 `src/`）和 `meta.json`。
+2. 运行 `python community/check.py community/<集>/<你的文件夹>`，它会检查格式并跑一遍评测。
+3. 只提交这一个文件夹，开 Pull Request，把自测摘要贴进描述。
+
+之后 GitHub Actions 会自动评测，维护者看过后合并。社区榜是在 GitHub 的虚拟机上测的，局数少，和节目里的正式成绩不能直接比。规则、`meta.json` 的写法和成绩口径见 [`community/README.md`](community/README.md)。
+
 ## 每集目录里有什么
 
 | 路径 | 内容 |
@@ -56,7 +78,7 @@ python challenge.py 你的bot.cpp
 
 第 5 集也不同（没有 bot、回放和挑战脚本，换成三轮的选手包、各模型提交的代码和反例、盲评和复盘、裁判程序和隐藏负载），见 [`warehouse/README.md`](warehouse/README.md)。这一集另有一支人工队：两位人类选手做了第 1 轮的任务，代码和赛后另测的成绩在 [`warehouse/appendix/human/`](warehouse/appendix/human/)，不计入正式成绩。
 
-`arena/` 是第 3 集起使用的通用对战平台（赛程、Bradley–Terry 评分）。`docs/` 里有评分方法和"版本演化"实验的说明。
+`community/` 是观众投稿和社区榜，见上面的“来投稿”。`arena/` 是第 3 集起使用的通用对战平台（赛程、Bradley–Terry 评分）。`docs/` 里有评分方法和"版本演化"实验的说明。
 
 ## 关于公平性
 

@@ -1,0 +1,11 @@
+{
+  "author": "示例",
+  "github": "chen-006",
+  "name": "原地不动",
+  "description": "第 3 集选手包里的模板原样复制，三个角色都不动，只用来演示投稿格式。",
+  "written_by": "human",
+  "model": "",
+  "tool": "",
+  "based_on": "ctf/workspace/submission/bot.cpp",
+  "license": "MIT"
+}

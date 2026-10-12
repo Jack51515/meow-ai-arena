@@ -1,0 +1,147 @@
+# 投稿合并后更新社区榜（community/LEADERBOARD.md）。
+#
+# 为什么拆成三个任务：
+#   plan      只读。算出这次要评测哪些投稿，不运行投稿代码。
+#   evaluate  只读。编译并运行投稿代码。每份投稿单独占一台虚拟机，互相碰不到对方的文件和进程；
+#             令牌只读，而且不留在工作目录里（persist-credentials: false）。结果只通过 artifact 交出去。
+#   publish   唯一有写权限（contents: write）的任务。它不编译、不运行任何投稿代码，只下载 artifact，
+#             用仓库里的 community/ci_tools.py 核对后重新生成榜单并提交。
+# 这样拆开以后，运行不可信代码的虚拟机上从头到尾没有可写的令牌。
+# evaluate 交回来的 result.json 是在运行过投稿代码的机器上产生的，publish 把它当作不可信的数据：
+# 只认 plan 列出的投稿，逐项核对类型和大小，作者信息一律取自仓库里的 meta.json，还要核对代码的哈希和仓库里的一致。
+# 剩下的风险是投稿代码伪造自己的成绩，这一点靠合并前的人工审查。
+#
+# 为什么默认只重测改动过的投稿：
+#   全量重测的用时随投稿数线性增长（bot 类每份十几到几十分钟，仓储调度完整档每份半小时以上）。
+#   各台虚拟机快慢不一，但两类成绩都是在同一台机器上取的相对值：仓储调度是同一台机器上基线和投稿的 CPU 时间之比，
+#   bot 类是和官方选手打同一轮小比赛拟合出来的实力值。所以不同批次的结果大体可以放在一张表里，
+#   误差主要来自局数少，而不是机器不同。需要统一重测时，手动运行这个工作流，entries 填 all。
+name: 社区榜更新
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'community/**'
+      - '!community/LEADERBOARD.md'
+      - '!community/results/**'
+  workflow_dispatch:
+    inputs:
+      entries:
+        description: '要重测的投稿：all，或者用空格隔开的 <集>/<目录>，例如 ctf/someone__my-bot'
+        required: true
+        default: all
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    name: 列出要评测的投稿
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      count: ${{ steps.plan.outputs.count }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      # fetch-depth: 0 取完整历史：要拿这次推送之前的提交（github.event.before）做对比，
+      # 一次推送可能带好几个提交，只取最近两个不够。
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: 对比改动
+        id: plan
+        env:
+          PUSH_BEFORE: ${{ github.event.before }}
+          PLAN_ENTRIES: ${{ github.event.inputs.entries }}
+        run: python3 community/ci_tools.py plan --after "$GITHUB_SHA"
+
+  evaluate:
+    name: 评测 ${{ matrix.episode }}/${{ matrix.entry }}
+    needs: plan
+    if: needs.plan.outputs.count != '0'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      # 仓储调度在这里跑完整档（第 1 轮的全部 8 组隐藏负载），bot 类和 PR 评测一样跑 challenge.py 的默认局数。
+      # 评测没通过也照常上传 result.json，榜单上会把它列在“没有成绩的投稿”里。
+      - name: 评测
+        env:
+          EPISODE: ${{ matrix.episode }}
+          ENTRY: ${{ matrix.entry }}
+        run: |
+          g++ --version | head -n 1
+          mode=""
+          if [ "$EPISODE" = "warehouse" ]; then mode="--full"; fi
+          python3 community/check.py "community/$EPISODE/$ENTRY" $mode --out "$GITHUB_WORKSPACE/out" --timeout 120 \
+            || echo "评测没有通过，结果照常上传。"
+      - name: 上传结果
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: result-${{ matrix.episode }}-${{ matrix.entry }}
+          path: out/result.json
+          if-no-files-found: warn
+          retention-days: 30
+
+  publish:
+    name: 更新榜单
+    needs: [plan, evaluate]
+    # evaluate 被跳过（这次推送没有改到投稿）或者部分失败时也要运行：删除投稿、评测失败都要反映到榜单上。
+    if: ${{ !cancelled() && needs.plan.result == 'success' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      # 检出分支当前的最新提交，而不是触发这次运行的那个提交：评测要跑很久，期间可能又有别的合并。
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: 下载评测结果
+        if: needs.plan.outputs.count != '0'
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          pattern: result-*
+          path: ${{ runner.temp }}/artifacts
+      - name: 重新生成榜单并提交
+        env:
+          PLAN_MATRIX: ${{ needs.plan.outputs.matrix }}
+          EVAL_SHA: ${{ github.sha }}
+          ARTIFACTS: ${{ runner.temp }}/artifacts
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p "$ARTIFACTS"
+          # 两次运行同时提交时后一次推送会被拒绝：取最新的 main，重新生成，再推一次。
+          for attempt in 1 2 3 4 5; do
+            mkdir -p community/results
+            python3 community/ci_tools.py collect --artifacts "$ARTIFACTS"
+            python3 community/ci_tools.py render
+            git add -A community/results community/LEADERBOARD.md
+            if git diff --cached --quiet; then
+              echo "榜单没有变化。"
+              exit 0
+            fi
+            git commit -m "更新社区榜"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "推送失败，取最新的 main 再试（第 $attempt 次）。"
+            sleep $((attempt * 5))
+            git fetch origin main
+            git reset --hard origin/main
+          done
+          echo "连续 5 次推送失败。" >&2
+          exit 1

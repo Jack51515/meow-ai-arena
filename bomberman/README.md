@@ -43,6 +43,8 @@ python challenge.py 你的bot.cpp --full    # 再加 3 人局，1320 局，约 1
 
 不带参数时，用公开基准 `workspace/baseline.cpp` 当"你的 bot"演示一遍。每局的 HTML 回放都会存进结果目录。
 
+打完想留个名次，可以把这个 bot 投到社区榜，见 [`community/README.md`](../community/README.md)。
+
 **自己开发时**，在 `workspace/` 里用本地裁判（和比赛时选手用的完全一样，见 `workspace/README.md`）：
 
 ```bash

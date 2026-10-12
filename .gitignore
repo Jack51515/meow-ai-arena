@@ -19,3 +19,7 @@ diplomacy/games/*/回放.html
 diplomacy/games/*/承诺核对.json
 # 第 5 集仓储调度：选手包和各轮包里的 tools/ 是比赛材料，不是上面那个放编译器的 tools/
 !warehouse/**/tools/
+
+# 社区投稿自测的产物（community/check.py）
+community/.runs/
+community/.cache/

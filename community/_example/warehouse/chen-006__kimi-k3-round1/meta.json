@@ -1,0 +1,11 @@
+{
+  "author": "示例",
+  "github": "chen-006",
+  "name": "Kimi K3 第 1 轮原样",
+  "description": "把 Kimi K3 第 1 轮交的代码原样复制过来，只用来演示仓储调度的投稿格式。",
+  "written_by": "ai",
+  "model": "Kimi K3",
+  "tool": "Kimi Code",
+  "based_on": "warehouse/submissions/round1/kimi-k3",
+  "license": "MIT"
+}

@@ -1,4 +1,4 @@
-"""meow-ai-arena 入口菜单：看回放、用你的 bot 挑战 AI、检查环境。
+"""meow-ai-arena 入口菜单：看回放、用你的 bot 挑战 AI、投稿、检查环境。
 
 Windows 双击 start.cmd，macOS / Linux 运行 sh start.sh，或直接 python start.py。
 """
@@ -92,17 +92,32 @@ def challenge():
     if ask("快速模式（几分钟）还是完整模式（更稳、更久）？输入 q 或 f：", ["q", "f"]) == "f":
         args.append("--full")
     subprocess.call(args, cwd=ROOT / folder)
+    print("打完想留个名次，可以把这个 bot 投到社区榜：在菜单里选“投稿”，或者看 community/README.md。")
+
+
+def submit():
+    print("你的 bot（第 1、2、3 集）和优化过的仓储调度代码（第 5 集）可以投到这个仓库，合并后进社区榜 community/LEADERBOARD.md。")
+    print("  交给 AI 办：把 community/AGENT_PROMPT.md 里的提示词整段复制给你的 coding agent。")
+    print("  自己动手：")
+    print("    1. fork 本仓库，新建 community/<集>/<你的GitHub用户名>__<作品名>/，放进 bot.cpp（第 5 集是 src/）和 meta.json")
+    print("    2. 运行 python community/check.py community/<集>/<你的文件夹>")
+    print("    3. 只提交这一个文件夹，开 Pull Request，把自测摘要贴进描述")
+    print("规则和 meta.json 的写法见 community/README.md。")
+    if ask("现在打开投稿指南吗？输入 y 或 n：", ["y", "n"]) == "y":
+        path = ROOT / "community" / "README.md"
+        print(f"正在打开 {path}（Markdown 文档；打不开的话用任意文本编辑器看）")
+        webbrowser.open(path.as_uri())
 
 
 def main():
     print("=" * 56 + "\n  meow-ai-arena · AI 算法对抗大赛\n" + "=" * 56)
     while True:
-        print("\n  1. 看 AI 对战回放\n  2. 用你的 bot 挑战 AI\n  3. 检查环境\n  0. 退出")
-        c = ask("选择：", ["1", "2", "3", "0"])
+        print("\n  1. 看 AI 对战回放\n  2. 用你的 bot 挑战 AI\n  3. 检查环境\n  4. 投稿（把你的作品交到社区榜）\n  0. 退出")
+        c = ask("选择：", ["1", "2", "3", "4", "0"])
         if c == "0":
             return
         try:
-            {"1": watch, "2": challenge, "3": check}[c]()
+            {"1": watch, "2": challenge, "3": check, "4": submit}[c]()
         except (KeyboardInterrupt, EOFError):
             print("\n已取消。")
 

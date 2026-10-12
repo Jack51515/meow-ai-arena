@@ -46,6 +46,8 @@ python challenge.py 你的bot.cpp --full    # 约 2000 局，几分钟，结果�
 
 不带参数时用 `workspace/submission/bot.cpp`。这是选手拿到的模板，已经写好完整的输入解析，角色原地不动，你可以直接在上面改。
 
+打完想留个名次，可以把这个 bot 投到社区榜，见 [`community/README.md`](../community/README.md)。
+
 **自己开发时**，在 `workspace/` 里用本地裁判（和比赛时选手用的完全一样）：
 
 ```bash
