@@ -1,0 +1,79 @@
+{
+ "commit": "6eece249c69e047cc83dbf862ac2332dbe1427fa",
+ "detail": {
+  "ci95": [
+   268.5,
+   326.4
+  ],
+  "field": [
+   {
+    "name": "GPT-6 Astra",
+    "score": 254.6
+   },
+   {
+    "name": "Fable 5.1",
+    "score": 186.2
+   },
+   {
+    "name": "GPT-6.1 Sol",
+    "score": 184.6
+   },
+   {
+    "name": "Opus 5.5",
+    "score": 179.9
+   },
+   {
+    "name": "Sonnet 5.5",
+    "score": 163.1
+   },
+   {
+    "name": "DeepSeek V4.1 Flash",
+    "score": 95.8
+   },
+   {
+    "name": "MiMo V2.6 Pro",
+    "score": 70.6
+   },
+   {
+    "name": "Kimi K3",
+    "score": 28.8
+   },
+   {
+    "name": "基准",
+    "score": 0.0
+   },
+   {
+    "name": "Qwen 3.8 Max",
+    "score": -9.8
+   },
+   {
+    "name": "GLM 5.3",
+    "score": -57.4
+   },
+   {
+    "name": "豆包 Seed 2.1 Turbo",
+    "score": -133.4
+   }
+  ],
+  "field_size": 13,
+  "games_note": "180 局",
+  "rank": 1
+ },
+ "entry": "huixiong806__meowmind",
+ "env": {
+  "compiler": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "cpus": 4,
+  "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+  "python": "3.12.3"
+ },
+ "episode": "ctf",
+ "errors": [],
+ "files": {
+  "bot.cpp": "90e4a76e67ead259cf1b71f899f1b6624e8592644d6a79c729316ea80d50308d"
+ },
+ "mode": "quick",
+ "schema": 1,
+ "score": 298.0,
+ "status": "pass",
+ "time": "2026-10-13T12:28:32Z"
+}
