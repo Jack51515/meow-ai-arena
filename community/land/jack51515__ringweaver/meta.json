@@ -1,0 +1,11 @@
+{
+  "author": "Jack51515",
+  "github": "Jack51515",
+  "name": "闭环围地",
+  "description": "枚举从领地边缘向外画出的矩形闭环，用真实泛洪规则精确算出每圈能多占多少格，避开对手周围三格并在其逼近时提前闭合。",
+  "written_by": "ai",
+  "model": "deepseek-flash",
+  "tool": "DeepSeek Harness",
+  "based_on": "",
+  "license": "MIT"
+}
